@@ -3,6 +3,13 @@ Streamlit Web Application: Network Load Analysis Using Normal Distribution
 Interactive Data Science & Capacity Planning Suite for Distributed Systems.
 """
 
+import os
+import sys
+
+# Ensure local module directory is in python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+sys.path.insert(0, os.path.dirname(__file__))
+
 import streamlit as st
 import numpy as np
 import pandas as pd
