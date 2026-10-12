@@ -32,7 +32,10 @@ class NormalDistributionAnalyzer:
         dagostino_stat, dagostino_p = stats.normaltest(self.series)
         
         # Kolmogorov-Smirnov test against fitted normal distribution
-        ks_stat, ks_p = stats.kstest(self.series, "norm", args=(self.mean, self.std))
+        # Standardize series to test against standard normal (robust across scipy versions)
+        z_series = (self.series - self.mean) / (self.std if self.std > 0 else 1.0)
+        ks_res = stats.kstest(z_series, stats.norm.cdf)
+        ks_stat, ks_p = float(ks_res.statistic), float(ks_res.pvalue)
 
         return {
             "mean": self.mean,
