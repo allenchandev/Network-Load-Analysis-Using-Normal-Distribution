@@ -104,3 +104,4 @@ class NormalDistributionAnalyzer:
             "safety_buffer_gbps": float(cushion_gbps),
             "recommended_capacity_gbps": float(recommended_capacity),
         }
+        
