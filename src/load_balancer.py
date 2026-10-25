@@ -98,8 +98,11 @@ class LoadBalancingSimulator:
         drop_rate = (total_dropped / total_offered) if total_offered > 0 else 0.0
 
         # Load variance among nodes (fairness measure)
-        mean_loads = [np.mean(n.load_history) for n in nodes]
+        mean_loads = [np.mean(n.load_history) if n.load_history else 0.0 for n in nodes]
         load_imbalance_std = float(np.std(mean_loads))
+
+        # Average utilisation across all nodes as % of capacity
+        avg_util = float(np.mean(mean_loads)) / self.node_capacity_gbps * 100.0
 
         return {
             "strategy": strategy,
@@ -107,12 +110,17 @@ class LoadBalancingSimulator:
             "total_served_gbps": float(total_served),
             "total_dropped_gbps": float(total_dropped),
             "packet_drop_rate_pct": float(drop_rate * 100.0),
+            # Aliases used by new UI tabs
+            "drop_rate_pct": float(drop_rate * 100.0),
+            "avg_utilisation_pct": float(avg_util),
+            "load_variance": load_imbalance_std,
+            "node_histories": [n.load_history for n in nodes],
             "load_imbalance_std": load_imbalance_std,
             "node_metrics": [
                 {
                     "node_id": n.node_id,
-                    "avg_load_gbps": float(np.mean(n.load_history)),
-                    "peak_load_gbps": float(np.max(n.load_history)),
+                    "avg_load_gbps": float(np.mean(n.load_history)) if n.load_history else 0.0,
+                    "peak_load_gbps": float(np.max(n.load_history)) if n.load_history else 0.0,
                     "dropped_gbps": float(n.dropped_traffic_gbps),
                 }
                 for n in nodes

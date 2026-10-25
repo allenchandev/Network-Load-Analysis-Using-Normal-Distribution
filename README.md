@@ -118,17 +118,24 @@ The platform is structured modularly under [`src/`](src/):
 
 ## 🖥️ Interactive Streamlit Dashboard
 
-The user interface ([`app.py`](app.py)) provides an intuitive, beginner-friendly data science console:
+The user interface ([`app.py`](app.py)) delivers an executive, high-aesthetic data science console featuring a sleek light/white background theme with high-contrast typography and fluid micro-animations:
 
-* **Executive KPI Cards**: Instant summary of Average Load ($\mu$), Typical Volatility ($\sigma$), Highest Peak, and Safe Capacity to Buy.
-* **Tab 1: Live Traffic Timeline**: Interactive Plotly graph showing minute-by-minute traffic flows, day/night cycles, and marked anomaly bursts.
-* **Tab 2: Capacity & SLA Calculator**:
-  - *Option A*: Select a target SLA ($95\%$ to $99.99\%$) $\rightarrow$ Computes required bandwidth and safety buffer.
-  - *Option B*: Slider to test any fixed link capacity $\rightarrow$ Computes the exact percentage risk of server crash or dropped packets.
-* **Tab 3: The Bell Curve (Normal Distribution)**:
-  - Overlay of empirical traffic frequency against theoretical Gaussian PDF.
-  - Explains why the Central Limit Theorem allows engineering teams to rely on $\mu + 3\sigma$.
-* **Sidebar Controls**: Easy sliders for everyday load, simulation duration, and an expandable drawer for noise parameters.
+* **Animated Vector Header & Logo:** Custom SVG bell curve with dynamic traveling pulse animations (`@keyframes flowCurve`), rotating orbital rings (`@keyframes spinOrbit`), and breathing telemetry nodes.
+* **Live Telemetry Ticker:** Continuous streaming stats marquee providing at-a-glance throughput, standard deviation, and live radar status beacon.
+* **Real-Time Network Risk Gauge:** Instant visual risk estimation cards detailing Current $Z$-Score, Breach Probability, Safety Margin, and Capacity Headroom.
+* **Executive KPI Metric Cards:** Cards with hover lift, gradient glow borders, and clean statistical summaries ($\mu$, $\sigma$, Peak Gbps, Safe SLA Sizing).
+* **Tab 1: 📈 Live Traffic Timeline:** Interactive Plotly graph showing minute-by-minute traffic flows, day/night cycles, baseline trends, and marked anomaly bursts.
+* **Tab 2: 🎯 Capacity & SLA Calculator:**
+  - *Option A:* Select target SLA ($95\%$ to $99.99\%$) $\rightarrow$ Computes required bandwidth and safety buffer.
+  - *Option B:* Interactive slider for fixed link capacity $\rightarrow$ Calculates exact mathematical risk of overflow or packet loss.
+* **Tab 3: 🔔 The Bell Curve (Normal Distribution):**
+  - Empirical histogram overlaid with theoretical Gaussian PDF curve.
+  - Interactive probability interval sliders and Central Limit Theorem validation.
+* **Tab 4: 🧮 Z-Score Lab:**
+  - Real-time custom traffic load tester computing instantaneous $Z$-scores, percentiles, and anomaly threat levels.
+* **Tab 5: ⚔️ Load Balancer Battle:**
+  - Head-to-head benchmarking of three algorithms: Static Round-Robin, Least-Connections, and Statistical Gaussian Routing with node-level load variance and drop rate metrics.
+* **Sidebar Controls:** Sliders for baseline load, daily swings, simulation timeframe, and an expandable drawer for stochastic noise tuning.
 
 ---
 
@@ -184,10 +191,3 @@ python src/statistical_model.py
 # Run load balancing benchmarks
 python src/load_balancer.py
 ```
-
----
-
-## 📜 Academic Attribution & License
-- **Course**: Probabilistic Modeling & Intelligent Systems
-- **Author**: Allen Chandev
-- **License**: MIT License
