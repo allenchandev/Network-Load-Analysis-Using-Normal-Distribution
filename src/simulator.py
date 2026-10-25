@@ -83,6 +83,39 @@ class NetworkLoadSimulator:
 
         return df
 
+    def next_live_point(self, current_dt: pd.Timestamp) -> Dict[str, Any]:
+        """
+        Generates the next real-time streaming traffic data point anchored to actual wall clock time.
+        """
+        cfg = self.config
+        hour_frac = current_dt.hour + (current_dt.minute / 60.0) + (current_dt.second / 3600.0)
+
+        # Diurnal pattern peaking at 14:00 (2 PM)
+        phase_shift = (14.0 / 24.0) * 2 * np.pi
+        diurnal = cfg.diurnal_amplitude_gbps * np.sin(
+            (2 * np.pi * hour_frac / 24.0) - (np.pi / 2) + (phase_shift / 2)
+        )
+        det_load = cfg.base_load_gbps + diurnal
+
+        # Gaussian noise
+        noise = np.random.normal(0, cfg.random_noise_std_gbps)
+
+        # Burst anomaly check
+        is_burst = bool(np.random.rand() < (cfg.burst_probability * 0.2))  # scaled for per-second sampling
+        burst_val = float(np.random.exponential(cfg.burst_magnitude_gbps)) if is_burst else 0.0
+
+        total_load = max(5.0, det_load + noise + burst_val)
+
+        return {
+            "timestamp": current_dt,
+            "hour_of_day": hour_frac,
+            "total_load_gbps": round(float(total_load), 2),
+            "deterministic_trend": round(float(det_load), 2),
+            "gaussian_fluctuation": round(float(noise), 2),
+            "burst_anomaly": round(float(burst_val), 2),
+            "is_burst": is_burst,
+        }
+
 
 if __name__ == "__main__":
     sim = NetworkLoadSimulator()
