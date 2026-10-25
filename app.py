@@ -16,9 +16,14 @@ import pandas as pd
 import plotly.graph_objects as go
 from scipy import stats
 
-from simulator import NetworkLoadSimulator, TrafficSimulationConfig
-from statistical_model import NormalDistributionAnalyzer
-from load_balancer import LoadBalancingSimulator
+try:
+    from src.simulator import NetworkLoadSimulator, TrafficSimulationConfig
+    from src.statistical_model import NormalDistributionAnalyzer
+    from src.load_balancer import LoadBalancingSimulator
+except ImportError:
+    from simulator import NetworkLoadSimulator, TrafficSimulationConfig
+    from statistical_model import NormalDistributionAnalyzer
+    from load_balancer import LoadBalancingSimulator
 
 st.set_page_config(
     page_title="Network Traffic & Capacity Planner",
