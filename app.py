@@ -16,22 +16,13 @@ import pandas as pd
 import plotly.graph_objects as go
 from scipy import stats
 
-try:
-    import src.simulator as sim_mod
-    import importlib
-    importlib.reload(sim_mod)
-    from src.simulator import NetworkLoadSimulator, TrafficSimulationConfig
-    from src.statistical_model import NormalDistributionAnalyzer
-    from src.load_balancer import LoadBalancingSimulator
-    from src.real_data import RealDataIngestionService
-except (ImportError, ModuleNotFoundError):
-    import simulator as sim_mod
-    import importlib
-    importlib.reload(sim_mod)
-    from simulator import NetworkLoadSimulator, TrafficSimulationConfig
-    from statistical_model import NormalDistributionAnalyzer
-    from load_balancer import LoadBalancingSimulator
-    from real_data import RealDataIngestionService
+import src.simulator as sim_mod
+import importlib
+importlib.reload(sim_mod)
+from src.simulator import NetworkLoadSimulator, TrafficSimulationConfig
+from src.statistical_model import NormalDistributionAnalyzer
+from src.load_balancer import LoadBalancingSimulator
+from src.real_data import RealDataIngestionService
 
 st.set_page_config(
     page_title="Network Traffic & Capacity Planner",
