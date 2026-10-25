@@ -20,13 +20,14 @@ An enterprise-grade statistical capacity planning and distributed traffic simula
 
 This project is tailored to fulfill the core curriculum requirements for **Probabilistic Systems & Data-Driven Modeling**:
 
-| Course Outcome | Taxonomy | Description | How It Is Implemented & Proved in Code |
-| :---: | :---: | :--- | :--- |
-| **CO 1** | *Evaluate* | **Evaluate the decisions of intelligent systems that use probability.** | Implemented in [`src/load_balancer.py`](src/load_balancer.py). Simulates and evaluates an intelligent **Gaussian Headroom-Aware Load Balancer** that uses probability calculations ($P(X + \Delta > C)$) versus traditional Round-Robin and Least-Loaded heuristics. Evaluated via total dropped packets and load variance. |
-| **CO 2** | *Model* | **Model the data that has uncertainties.** | Implemented in [`src/simulator.py`](src/simulator.py). Synthesizes and models non-deterministic network flows by combining diurnal deterministic sinusoidal trends with Gaussian white noise $\mathcal{N}(0, \sigma^2)$ and Bernoulli-Pareto burst anomalies. |
-| **CO 3** | *Predict* | **Predict the network traffic having uncertainties.** | Implemented in [`src/statistical_model.py`](src/statistical_model.py). Predicts maximum probable traffic demand and calculates recommended link capacity bounds ($C = \mu + Z \cdot \sigma$) required to sustain target SLAs (95%, 99%, 99.9%) using the Gaussian Survival Function. |
-| **CO 4** | *Justify* | **Justify Artificial Intelligence decisions statistically.** | Justifies dynamic routing decisions by computing instantaneous $Z$-scores and buffer headroom for worker nodes, mathematically proving why certain nodes are selected to minimize overflow probability. |
-| **CO 5** | *Validate* | **Validate the data driven models using statistical tests.** | Implemented in [`src/statistical_model.py`](src/statistical_model.py). Formally validates Gaussian assumptions using the **D'Agostino-Pearson Omnibus Normality Test**, **Kolmogorov-Smirnov (K-S) Goodness-of-Fit Test**, and empirical **Quantile-Quantile (Q-Q) plots**. |
+| Unit | Industry-Specific CO | Action Verb | Learning Session Hours | How It Is Implemented & Proved in Code |
+| :---: | :--- | :---: | :---: | :--- |
+| **Unit I** | **CO1: Evaluate the decisions of intelligent systems that uses probability.** | *Evaluate* | 9 | Implemented in [`src/load_balancer.py`](src/load_balancer.py). Evaluates the decisions of an intelligent **Gaussian Headroom-Aware Load Balancer** that calculates probabilities ($P(X + \Delta > C)$) versus standard Round-Robin and Least-Loaded algorithms by benchmarking packet drops and load variance. |
+| **Unit II** | **CO2: Model the data that has uncertainties.** | *Model* | 9 | Implemented in [`src/simulator.py`](src/simulator.py). Synthesizes and models uncertain network traffic by combining diurnal human cycles with Gaussian white noise $\mathcal{N}(0, \sigma^2)$ and Bernoulli-Pareto burst anomalies. |
+| **Unit III** | **CO3: Predict the network traffic having uncertainties.** | *Predict* | 9 | Implemented in [`src/statistical_model.py`](src/statistical_model.py). Predicts future traffic peaks and required provisioning headroom ($C = \mu + Z \cdot \sigma$) using Gaussian cumulative probability to guarantee target SLAs (95%, 99%, 99.9%). |
+| **Unit IV** | **CO4: Justify Artificial Intelligence decisions statistically.** | *Justify* | 9 | Statistically justifies intelligent routing decisions by computing instantaneous $Z$-scores and buffer headroom across worker nodes, proving why specific nodes are selected to minimize overflow risk. |
+| **Unit V** | **CO5: Validate the data driven models using statistical tests.** | *Validate* | 9 | Implemented in [`src/statistical_model.py`](src/statistical_model.py). Validates the data-driven normal distribution assumption using formal goodness-of-fit tests: **D'Agostino-Pearson Omnibus Test**, **Kolmogorov-Smirnov (K-S) Test**, and **Q-Q plots**. |
+| **Total** | | | **45 Hours** | |
 
 ---
 
