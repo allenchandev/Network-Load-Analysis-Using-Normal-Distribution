@@ -17,11 +17,17 @@ import plotly.graph_objects as go
 from scipy import stats
 
 try:
+    import src.simulator as sim_mod
+    import importlib
+    importlib.reload(sim_mod)
     from src.simulator import NetworkLoadSimulator, TrafficSimulationConfig
     from src.statistical_model import NormalDistributionAnalyzer
     from src.load_balancer import LoadBalancingSimulator
     from src.real_data import RealDataIngestionService
-except ImportError:
+except (ImportError, ModuleNotFoundError):
+    import simulator as sim_mod
+    import importlib
+    importlib.reload(sim_mod)
     from simulator import NetworkLoadSimulator, TrafficSimulationConfig
     from statistical_model import NormalDistributionAnalyzer
     from load_balancer import LoadBalancingSimulator
@@ -126,123 +132,112 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Sidebar: Data Source & Settings
+# Sidebar: Simulator Mode & Settings
 with st.sidebar:
-    st.markdown("### 🗄️ Network Data Source")
-    data_source_mode = st.radio(
-        "Choose where data comes from:",
-        options=[
-            "🌐 Real-World Cloud / CDN Traces",
-            "⚡ Live Server Telemetry (Host NIC)",
-            "📁 Upload Your Own CSV Log",
-            "🎛️ Mathematical Simulator",
-        ],
-        index=0,
-        help="Switch between authentic production internet logs, live machine telemetry, custom CSV data, or statistical simulation.",
+    st.markdown("### 🎛️ Real-Time Simulator")
+    
+    live_streaming_on = st.toggle(
+        "⚡ Live Real-Time Stream",
+        value=True,
+        help="When enabled, the simulator streams live traffic second-by-second using the actual clock time.",
     )
 
-    if data_source_mode == "🌐 Real-World Cloud / CDN Traces":
-        st.markdown("#### Real Cloud Benchmarks")
-        curated_options = list(RealDataIngestionService.get_curated_datasets().keys())
-        selected_dataset = st.selectbox(
-            "Select authentic network trace:",
-            options=curated_options,
+    if live_streaming_on:
+        stream_speed = st.selectbox(
+            "Live Refresh Speed:",
+            options=[1, 2, 5],
             index=0,
+            format_func=lambda s: f"Every {s} second{'s' if s > 1 else ''} (Live)",
         )
-        cat_info = RealDataIngestionService.get_curated_datasets()[selected_dataset]
-        st.caption(f"ℹ️ **Origin**: {cat_info['source']}")
-        st.caption(cat_info['description'])
-        
-        duration_hours = st.slider("Time Window (Hours)", min_value=12, max_value=72, value=24, step=6)
-        df_trace = RealDataIngestionService.load_curated_dataset(selected_dataset, hours=duration_hours)
+        if st.button("🔄 Reset Live Buffer"):
+            st.session_state["live_history_df"] = None
+    
+    st.markdown("---")
+    st.markdown("#### ⚙️ Traffic Parameters")
+    base_load = st.slider(
+        "Average Daily Traffic (Gbps)",
+        min_value=10.0,
+        max_value=100.0,
+        value=45.0,
+        step=5.0,
+        help="The typical amount of data flowing into your servers on average.",
+    )
+    
+    duration_hours = st.slider(
+        "Historical Window (Hours)",
+        min_value=12,
+        max_value=72,
+        value=24,
+        step=6,
+        help="Hours of baseline traffic history to analyze.",
+    )
 
-    elif data_source_mode == "⚡ Live Server Telemetry (Host NIC)":
-        st.markdown("#### Live Network Interface")
-        st.write("Measures instantaneous network I/O directly from this machine's network card.")
-        sample_secs = st.slider("Sampling Duration (Seconds)", min_value=3, max_value=20, value=6, step=1)
-        if st.button("🔄 Capture Live Network Stream", use_container_width=True):
-            st.session_state["live_capture_df"] = None
+    with st.expander("More Controls (Spikes & Day/Night Swing)", expanded=False):
+        diurnal_amp = st.slider("Day vs. Night Difference (Gbps)", 0.0, 40.0, 20.0, 2.0)
+        noise_std = st.slider("Minute-to-Minute Wiggle / Jitter (Gbps)", 1.0, 15.0, 5.0, 0.5)
+        burst_prob = st.slider("Chance of Sudden Surge (%)", 0.0, 10.0, 2.0, 0.5) / 100.0
+        burst_magnitude = st.slider("Size of Sudden Surge (Gbps)", 5.0, 50.0, 20.0, 5.0)
 
-        if "live_capture_df" not in st.session_state or st.session_state["live_capture_df"] is None:
-            with st.spinner(f"Sampling network card for {sample_secs} seconds..."):
-                st.session_state["live_capture_df"] = RealDataIngestionService.get_live_nic_sample(duration_seconds=sample_secs)
+# Build configuration
+config = TrafficSimulationConfig(
+    duration_hours=duration_hours,
+    sampling_rate_minutes=2,
+    base_load_gbps=base_load,
+    diurnal_amplitude_gbps=diurnal_amp,
+    random_noise_std_gbps=noise_std,
+    burst_probability=burst_prob,
+    burst_magnitude_gbps=burst_magnitude,
+    random_seed=42,
+)
+simulator = NetworkLoadSimulator(config)
 
-        df_trace = st.session_state["live_capture_df"]
-        st.success(f"Captured {len(df_trace)} live telemetry points!")
+now_ts = pd.Timestamp.now()
 
-    elif data_source_mode == "📁 Upload Your Own CSV Log":
-        st.markdown("#### Upload Network Log")
-        uploaded_file = st.file_uploader(
-            "Upload CSV (must contain numeric bandwidth / load column)",
-            type=["csv"],
-            help="Supports columns named 'load', 'traffic', 'gbps', 'mbps', etc.",
-        )
-        if uploaded_file is not None:
-            try:
-                df_trace = RealDataIngestionService.parse_user_csv(uploaded_file)
-                st.success(f"Parsed {len(df_trace)} rows from CSV successfully!")
-            except Exception as e:
-                st.error(f"Error parsing CSV: {e}. Falling back to default trace.")
-                df_trace = RealDataIngestionService.load_curated_dataset("Cloudflare Edge CDN (Global HTTP Ingress)")
-        else:
-            st.info("No file uploaded yet. Showing Cloudflare benchmark as preview:")
-            df_trace = RealDataIngestionService.load_curated_dataset("Cloudflare Edge CDN (Global HTTP Ingress)")
+# Manage Real-Time Live Buffer
+if live_streaming_on:
+    if "live_history_df" not in st.session_state or st.session_state["live_history_df"] is None:
+        # Initialize with baseline ending right now
+        init_steps = 180  # past 6 hours of 2-min points
+        init_timestamps = pd.date_range(end=now_ts, periods=init_steps, freq="2min")
+        init_df = simulator.generate_trace().tail(init_steps).copy()
+        init_df["timestamp"] = init_timestamps
+        st.session_state["live_history_df"] = init_df
 
-    else:
-        st.markdown("#### Simulator Controls")
-        base_load = st.slider(
-            "Average Daily Traffic (Gbps)",
-            min_value=10.0,
-            max_value=100.0,
-            value=45.0,
-            step=5.0,
-            help="The baseline amount of data flowing into your servers during normal hours.",
-        )
-        duration_hours = st.slider(
-            "Simulation Window (Hours)",
-            min_value=12,
-            max_value=72,
-            value=24,
-            step=6,
-        )
-        with st.expander("⚙️ Advanced Settings (Spikes & Swing)", expanded=False):
-            diurnal_amp = st.slider("Day vs. Night Difference (Gbps)", 0.0, 40.0, 20.0, 2.0)
-            noise_std = st.slider("Minute-to-Minute Wiggle / Jitter (Gbps)", 1.0, 15.0, 5.0, 0.5)
-            burst_prob = st.slider("Chance of Sudden Surge (%)", 0.0, 10.0, 2.0, 0.5) / 100.0
-            burst_magnitude = st.slider("Size of Sudden Surge (Gbps)", 5.0, 50.0, 20.0, 5.0)
+    # Append current live second's point
+    new_pt = simulator.next_live_point(now_ts)
+    new_row = pd.DataFrame([new_pt])
+    
+    # Keep rolling buffer of recent points
+    updated_df = pd.concat([st.session_state["live_history_df"], new_row], ignore_index=True)
+    if len(updated_df) > 300:
+        updated_df = updated_df.iloc[-300:]
+    st.session_state["live_history_df"] = updated_df
+    df_trace = updated_df.copy()
+    data_origin_label = f"🟢 LIVE STREAMING ({now_ts.strftime('%H:%M:%S')})"
+else:
+    df_trace = simulator.generate_trace()
+    # Align timestamps to current date
+    df_trace["timestamp"] = pd.date_range(end=now_ts, periods=len(df_trace), freq="2min")
+    data_origin_label = "Real-Time Clock Aligned Simulation"
 
-        config = TrafficSimulationConfig(
-            duration_hours=duration_hours,
-            sampling_rate_minutes=2,
-            base_load_gbps=base_load,
-            diurnal_amplitude_gbps=diurnal_amp,
-            random_noise_std_gbps=noise_std,
-            burst_probability=burst_prob,
-            burst_magnitude_gbps=burst_magnitude,
-            random_seed=42,
-        )
-        simulator = NetworkLoadSimulator(config)
-        df_trace = simulator.generate_trace()
-
-# Compute exact statistical parameters from active real data series
-data_origin_label = df_trace["data_origin"].iloc[0] if "data_origin" in df_trace.columns else "Active Telemetry"
+# Compute exact statistical parameters from active data series
 analyzer = NormalDistributionAnalyzer(df_trace["total_load_gbps"])
 norm_metrics = analyzer.test_normality()
 peak_load = float(df_trace["total_load_gbps"].max())
 min_load = float(df_trace["total_load_gbps"].min())
+current_live_load = float(df_trace["total_load_gbps"].iloc[-1])
 
 # Industry standard 3-sigma capacity (99.73% confidence interval)
 safe_rec = norm_metrics['mean'] + 3.0 * norm_metrics['std']
 recommendation_999 = analyzer.recommend_provisioning_capacity(99.9)["recommended_capacity_gbps"]
-
 
 # 4 Key Scorecards (Clear & Jargon-Free)
 st.markdown(
     f"""
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <h3 style="margin: 0;">📊 At a Glance</h3>
-        <span style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 12px; border-radius: 999px; font-size: 0.82rem; color: #38bdf8; font-weight: 600;">
-            📡 Source: {data_origin_label}
+        <span style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); padding: 4px 12px; border-radius: 999px; font-size: 0.85rem; color: #4ade80; font-weight: 600;">
+            {data_origin_label} • Current: {current_live_load:.1f} Gbps
         </span>
     </div>
     """,
@@ -297,10 +292,10 @@ with col4:
         f"""
         <div class="plain-card" style="border-color: rgba(52, 211, 153, 0.4);">
             <div>
-                <div class="card-label" style="color:#34d399;">4. Safe Capacity to Buy</div>
+                <div class="card-label" style="color:#34d399;">4. Safe Capacity (3-Sigma)</div>
                 <div class="card-val" style="color:#34d399;">{safe_rec:.1f} <span style="font-size:1rem;color:#94a3b8;font-weight:400;">Gbps</span></div>
             </div>
-            <div class="card-hint">Buying this handles 99.9% of all surges with zero slowdown.</div>
+            <div class="card-hint">Covers 99.7% of all surges (Mean + 3×Std).</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -401,24 +396,25 @@ with tab2:
         st.write("Pick how reliable you want your service to be:")
         sla_choice = st.select_slider(
             "Uptime Target",
-            options=[90.0, 95.0, 99.0, 99.9, 99.99],
-            value=99.9,
-            format_func=lambda x: f"{x}% uptime (Recommended)" if x == 99.9 else f"{x}% uptime",
+            options=[90.0, 95.0, 99.0, 99.7, 99.9, 99.99],
+            value=99.7,
+            format_func=lambda x: f"{x}% (Standard 3-Sigma)" if x == 99.7 else (f"{x}% (Ultra SLA)" if x == 99.9 else f"{x}% uptime"),
         )
         rec = analyzer.recommend_provisioning_capacity(sla_choice)
+        z_val = stats.norm.ppf(sla_choice / 100.0)
 
         st.metric(
             label=f"Buy this much bandwidth for {sla_choice}% uptime:",
             value=f"{rec['recommended_capacity_gbps']:.1f} Gbps",
-            delta=f"+{rec['safety_buffer_gbps']:.1f} Gbps safety cushion",
+            delta=f"+{rec['safety_buffer_gbps']:.1f} Gbps safety cushion ({z_val:.2f}σ)",
         )
         st.markdown(
             f"""
             <div class="analogy-box">
-                <b>What this means:</b><br>
+                <b>Mathematical Proof:</b><br>
+                <code>{norm_metrics['mean']:.1f} Gbps (Mean) + ({z_val:.2f} × {norm_metrics['std']:.1f} Gbps Std) = {rec['recommended_capacity_gbps']:.1f} Gbps</code><br>
                 By provisioning <b>{rec['recommended_capacity_gbps']:.1f} Gbps</b>, 
-                your servers will smoothly absorb <b>{sla_choice}%</b> of all traffic spikes. 
-                Users will get instant loading speeds without any dropped requests.
+                your servers will absorb <b>{sla_choice}%</b> of all traffic fluctuations with zero packet loss.
             </div>
             """,
             unsafe_allow_html=True,
@@ -530,3 +526,9 @@ with tab3:
         """,
         unsafe_allow_html=True,
     )
+
+# Real-time auto-streaming loop
+if live_streaming_on:
+    import time
+    time.sleep(stream_speed)
+    st.rerun()
