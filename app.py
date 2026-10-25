@@ -1,6 +1,6 @@
 """
-Streamlit Web Application: Network Load Analysis
-Clean, streamlined dashboard for statistical network traffic & capacity analysis.
+Streamlit Web Application: Network Capacity & Traffic Analyzer
+Ultra-clear, beginner-friendly dashboard explaining network load using the Normal Distribution.
 """
 
 import os
@@ -20,82 +20,121 @@ from simulator import NetworkLoadSimulator, TrafficSimulationConfig
 from statistical_model import NormalDistributionAnalyzer
 from load_balancer import LoadBalancingSimulator
 
-# Page configuration
 st.set_page_config(
-    page_title="Network Load Analysis",
-    page_icon="📡",
+    page_title="Network Traffic & Capacity Planner",
+    page_icon="🌐",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Refined styling: clean typography, elegant cards, reduced visual noise
+# Custom friendly styling
 st.markdown(
     """
     <style>
-    /* Global tweaks */
     .block-container {
-        padding-top: 2rem;
+        padding-top: 1.5rem;
         padding-bottom: 2rem;
-        max-width: 1200px;
+        max-width: 1150px;
     }
-    
-    /* Elegant metric card */
-    .metric-box {
+    .plain-card {
         background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
-        padding: 14px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 16px 20px;
         margin-bottom: 12px;
     }
-    .metric-title {
-        font-size: 0.8rem;
+    .card-label {
+        font-size: 0.82rem;
         color: #94a3b8;
         font-weight: 500;
-        letter-spacing: 0.03em;
         text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
-    .metric-num {
-        font-size: 1.65rem;
-        font-weight: 600;
+    .card-val {
+        font-size: 1.8rem;
+        font-weight: 700;
         color: #f8fafc;
-        margin-top: 2px;
+        margin: 4px 0 2px 0;
     }
-    .metric-sub {
-        font-size: 0.8rem;
+    .card-hint {
+        font-size: 0.85rem;
         color: #64748b;
-        margin-top: 2px;
+        line-height: 1.3;
     }
-
-    /* Subdued section headers */
-    h3 {
-        font-size: 1.25rem !important;
-        font-weight: 600 !important;
-        margin-top: 0.5rem !important;
-        margin-bottom: 0.8rem !important;
+    .guide-banner {
+        background: rgba(56, 189, 248, 0.08);
+        border-left: 4px solid #38bdf8;
+        padding: 12px 18px;
+        border-radius: 0 8px 8px 0;
+        margin-bottom: 20px;
+        color: #e2e8f0;
+        font-size: 0.95rem;
+    }
+    .takeaway-box {
+        background: rgba(34, 197, 94, 0.08);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+        padding: 14px 18px;
+        border-radius: 10px;
+        margin-top: 14px;
+        font-size: 0.93rem;
+        color: #dcfce7;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# App Header
-st.title("📡 Network Load Analysis")
-st.caption("Statistical traffic modeling, capacity planning, and routing simulation.")
+# Main Title & Simple Purpose
+st.title("🌐 Network Traffic & Capacity Planner")
+st.markdown(
+    """
+    <div class="guide-banner">
+        💡 <b>What is this page?</b><br>
+        Imagine you run a company like YouTube or Netflix. Millions of users stream videos.
+        This tool uses <b>basic statistics (the bell curve)</b> to answer one vital question: 
+        <b>"How much network bandwidth should we buy so our site never crashes?"</b>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-# Sidebar Configuration
+# Sidebar: Simple inputs
 with st.sidebar:
-    st.markdown("### ⚙️ Traffic Settings")
-    duration_hours = st.slider("Duration (Hours)", min_value=12, max_value=72, value=24, step=6)
-    base_load = st.slider("Base Load (Gbps)", min_value=10.0, max_value=100.0, value=45.0, step=5.0)
+    st.markdown("### 🎛️ Adjust Traffic Settings")
+    st.write("Control how busy the network is:")
     
-    with st.expander("Advanced Parameters", expanded=False):
-        diurnal_amp = st.slider("Diurnal Amplitude (Gbps)", min_value=0.0, max_value=40.0, value=20.0, step=2.0)
-        noise_std = st.slider("Gaussian Noise σ (Gbps)", min_value=1.0, max_value=15.0, value=5.0, step=0.5)
-        burst_prob = st.slider("Burst Probability (%)", min_value=0.0, max_value=10.0, value=2.0, step=0.5) / 100.0
-        burst_magnitude = st.slider("Burst Magnitude (Gbps)", min_value=5.0, max_value=50.0, value=20.0, step=5.0)
-        seed = st.number_input("Random Seed", value=42, step=1)
+    base_load = st.slider(
+        "Normal Everyday Traffic (Gbps)",
+        min_value=10.0,
+        max_value=100.0,
+        value=45.0,
+        step=5.0,
+        help="The typical amount of data flowing through the network on average.",
+    )
+    
+    duration_hours = st.slider(
+        "Time to Simulate (Hours)",
+        min_value=12,
+        max_value=72,
+        value=24,
+        step=6,
+        help="How many hours of internet traffic you want to view.",
+    )
 
-# Generate Traffic Trace
+    with st.expander("More Controls (Spikes & Day/Night Swing)", expanded=False):
+        diurnal_amp = st.slider(
+            "Day vs Night Traffic Difference (Gbps)",
+            min_value=0.0,
+            max_value=40.0,
+            value=20.0,
+            step=2.0,
+            help="Traffic is high during the afternoon and low at 4 AM.",
+        )
+        noise_std = st.slider("Random Jitter / Noise (Gbps)", min_value=1.0, max_value=15.0, value=5.0, step=0.5)
+        burst_prob = st.slider("Chance of Sudden Traffic Spikes (%)", min_value=0.0, max_value=10.0, value=2.0, step=0.5) / 100.0
+        burst_magnitude = st.slider("Size of Traffic Spike (Gbps)", min_value=5.0, max_value=50.0, value=20.0, step=5.0)
+
+# Generate Simulation Data
 config = TrafficSimulationConfig(
     duration_hours=duration_hours,
     sampling_rate_minutes=2,
@@ -104,80 +143,82 @@ config = TrafficSimulationConfig(
     random_noise_std_gbps=noise_std,
     burst_probability=burst_prob,
     burst_magnitude_gbps=burst_magnitude,
-    random_seed=int(seed),
+    random_seed=42,
 )
 
 simulator = NetworkLoadSimulator(config)
 df_trace = simulator.generate_trace()
 analyzer = NormalDistributionAnalyzer(df_trace["total_load_gbps"])
 norm_metrics = analyzer.test_normality()
+peak_load = float(df_trace["total_load_gbps"].max())
+min_load = float(df_trace["total_load_gbps"].min())
 
-# High-Level Summary KPI Cards
-m1, m2, m3, m4 = st.columns(4)
+# Step 1: Summary Cards with Plain English Explanations
+col1, col2, col3, col4 = st.columns(4)
 
-with m1:
+with col1:
     st.markdown(
         f"""
-        <div class="metric-box">
-            <div class="metric-title">Mean Load</div>
-            <div class="metric-num">{norm_metrics['mean']:.1f} <span style="font-size:0.95rem; font-weight:400; color:#94a3b8;">Gbps</span></div>
-            <div class="metric-sub">Average traffic load</div>
+        <div class="plain-card">
+            <div class="card-label">1. Average Traffic</div>
+            <div class="card-val">{norm_metrics['mean']:.1f} <span style="font-size:1rem;color:#94a3b8;">Gbps</span></div>
+            <div class="card-hint">The typical load flowing through your network.</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-with m2:
+with col2:
     st.markdown(
         f"""
-        <div class="metric-box">
-            <div class="metric-title">Std Deviation</div>
-            <div class="metric-num">±{norm_metrics['std']:.1f} <span style="font-size:0.95rem; font-weight:400; color:#94a3b8;">Gbps</span></div>
-            <div class="metric-sub">Traffic volatility (σ)</div>
+        <div class="plain-card">
+            <div class="card-label">2. Normal Fluctuations</div>
+            <div class="card-val">±{norm_metrics['std']:.1f} <span style="font-size:1rem;color:#94a3b8;">Gbps</span></div>
+            <div class="card-hint">How much traffic bounces up and down around the average.</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-with m3:
-    peak_load = float(df_trace["total_load_gbps"].max())
+with col3:
     st.markdown(
         f"""
-        <div class="metric-box">
-            <div class="metric-title">Observed Peak</div>
-            <div class="metric-num">{peak_load:.1f} <span style="font-size:0.95rem; font-weight:400; color:#94a3b8;">Gbps</span></div>
-            <div class="metric-sub">Maximum load reached</div>
+        <div class="plain-card">
+            <div class="card-label">3. Highest Peak</div>
+            <div class="card-val">{peak_load:.1f} <span style="font-size:1rem;color:#94a3b8;">Gbps</span></div>
+            <div class="card-hint">The single busiest moment observed during the simulation.</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-with m4:
-    is_normal = norm_metrics["is_approximately_normal"]
-    status_label = "Gaussian" if is_normal else "Non-Gaussian"
-    status_color = "#34d399" if is_normal else "#f87171"
+with col4:
+    safe_rec = norm_metrics['mean'] + 3.0 * norm_metrics['std']
     st.markdown(
         f"""
-        <div class="metric-box">
-            <div class="metric-title">Distribution</div>
-            <div class="metric-num" style="color: {status_color};">{status_label}</div>
-            <div class="metric-sub">Skew: {norm_metrics['skewness']:.2f} | Kurt: {norm_metrics['kurtosis']:.2f}</div>
+        <div class="plain-card">
+            <div class="card-label">4. Safe Bandwidth to Buy</div>
+            <div class="card-val" style="color:#34d399;">{safe_rec:.1f} <span style="font-size:1rem;color:#94a3b8;">Gbps</span></div>
+            <div class="card-hint">Enough capacity to safely handle 99.9% of all traffic surges.</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-# Clean Navigation Tabs
-tab_overview, tab_stats, tab_capacity, tab_lb = st.tabs([
-    "📈 Traffic Overview",
-    "📊 Distribution Fitting",
-    "🛡️ Capacity & SLA Risk",
-    "⚖️ Load Balancer",
+# Clean, Guided Tabs
+tab1, tab2, tab3 = st.tabs([
+    "1️⃣ Live Traffic Timeline",
+    "2️⃣ How Much Bandwidth to Buy? (SLA Calculator)",
+    "3️⃣ The Bell Curve (Why Normal Distribution?)",
 ])
 
-# ----------------- TAB 1: TRAFFIC OVERVIEW -----------------
-with tab_overview:
-    st.subheader("Network Load Over Time")
+# ----------------- TAB 1: TIMELINE -----------------
+with tab1:
+    st.subheader("Step 1: Look at Network Traffic Over Time")
+    st.write(
+        "This graph shows how data flows through the network hour by hour. "
+        "Notice the smooth rise and fall (day vs night) plus sudden red spikes when unexpected surges happen."
+    )
 
     fig_trace = go.Figure()
     fig_trace.add_trace(
@@ -185,8 +226,8 @@ with tab_overview:
             x=df_trace["timestamp"],
             y=df_trace["total_load_gbps"],
             mode="lines",
-            name="Total Load",
-            line=dict(color="#38bdf8", width=1.6),
+            name="Actual Traffic",
+            line=dict(color="#38bdf8", width=1.8),
         )
     )
     fig_trace.add_trace(
@@ -194,7 +235,7 @@ with tab_overview:
             x=df_trace["timestamp"],
             y=df_trace["deterministic_trend"],
             mode="lines",
-            name="Diurnal Baseline",
+            name="Day/Night Pattern",
             line=dict(color="#94a3b8", width=1.5, dash="dash"),
         )
     )
@@ -206,252 +247,143 @@ with tab_overview:
                 x=bursts_df["timestamp"],
                 y=bursts_df["total_load_gbps"],
                 mode="markers",
-                name="Bursts",
-                marker=dict(color="#f87171", size=5, symbol="circle"),
+                name="Sudden Spikes",
+                marker=dict(color="#f87171", size=6, symbol="circle"),
             )
         )
 
     fig_trace.update_layout(
         template="plotly_dark",
-        height=380,
-        margin=dict(l=20, r=20, t=20, b=20),
-        xaxis_title="Time",
-        yaxis_title="Load (Gbps)",
+        height=360,
+        margin=dict(l=20, r=20, t=15, b=20),
+        xaxis_title="Time of Day",
+        yaxis_title="Bandwidth Load (Gigabits per second - Gbps)",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
     st.plotly_chart(fig_trace, width="stretch")
 
-    with st.expander("Show Data Preview"):
-        st.dataframe(
-            df_trace[["timestamp", "total_load_gbps", "deterministic_trend", "is_burst"]].head(25),
-            width="stretch",
-        )
+    st.markdown(
+        """
+        <div class="takeaway-box">
+            <b>Key takeaway from this chart:</b><br>
+            If you only bought enough bandwidth for the <i>average</i> traffic (blue dashed line), your servers would crash every time traffic peaks during the afternoon or when sudden spikes hit. You need a safety buffer!
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-# ----------------- TAB 2: DISTRIBUTION FITTING -----------------
-with tab_stats:
-    st.subheader("Normal Distribution Assessment")
+# ----------------- TAB 2: CAPACITY & SLA -----------------
+with tab2:
+    st.subheader("Step 2: Calculate the Exact Capacity to Buy")
+    st.write(
+        "Instead of guessing, network engineers use statistics to find the balance: "
+        "**buy enough capacity so users never see errors, without wasting money on unused hardware.**"
+    )
 
-    c_left, c_right = st.columns(2)
+    c1, c2 = st.columns(2)
 
-    with c_left:
-        # PDF Histogram + Theoretical Normal Curve
-        x_min = max(0, df_trace["total_load_gbps"].min() - 5)
-        x_max = df_trace["total_load_gbps"].max() + 5
-        x_vals = np.linspace(x_min, x_max, 150)
-        fitted_pdf = stats.norm.pdf(x_vals, loc=norm_metrics["mean"], scale=norm_metrics["std"])
-
-        fig_pdf = go.Figure()
-        fig_pdf.add_trace(
-            go.Histogram(
-                x=df_trace["total_load_gbps"],
-                histnorm="probability density",
-                name="Observed Load",
-                opacity=0.6,
-                marker_color="#0284c7",
-                nbinsx=35,
-            )
-        )
-        fig_pdf.add_trace(
-            go.Scatter(
-                x=x_vals,
-                y=fitted_pdf,
-                mode="lines",
-                name=f"Fitted N(μ={norm_metrics['mean']:.1f}, σ={norm_metrics['std']:.1f})",
-                line=dict(color="#f43f5e", width=2),
-            )
-        )
-        fig_pdf.update_layout(
-            title="Density vs Fitted Normal Curve",
-            template="plotly_dark",
-            height=340,
-            margin=dict(l=20, r=20, t=40, b=20),
-            xaxis_title="Load (Gbps)",
-            yaxis_title="Density",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        )
-        st.plotly_chart(fig_pdf, width="stretch")
-
-    with c_right:
-        # Q-Q Plot
-        sorted_load = np.sort(df_trace["total_load_gbps"])
-        n = len(sorted_load)
-        theoretical_quantiles = stats.norm.ppf(
-            (np.arange(1, n + 1) - 0.5) / n, loc=norm_metrics["mean"], scale=norm_metrics["std"]
-        )
-
-        fig_qq = go.Figure()
-        fig_qq.add_trace(
-            go.Scatter(
-                x=theoretical_quantiles,
-                y=sorted_load,
-                mode="markers",
-                name="Quantiles",
-                marker=dict(color="#a855f7", size=3, opacity=0.7),
-            )
-        )
-        min_q = min(theoretical_quantiles.min(), sorted_load.min())
-        max_q = max(theoretical_quantiles.max(), sorted_load.max())
-        fig_qq.add_trace(
-            go.Scatter(
-                x=[min_q, max_q],
-                y=[min_q, max_q],
-                mode="lines",
-                name="Ideal Normal",
-                line=dict(color="#94a3b8", dash="dash"),
-            )
-        )
-        fig_qq.update_layout(
-            title="Q-Q Plot (Normal Fit)",
-            template="plotly_dark",
-            height=340,
-            margin=dict(l=20, r=20, t=40, b=20),
-            xaxis_title="Theoretical Quantiles (Gbps)",
-            yaxis_title="Observed Quantiles (Gbps)",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        )
-        st.plotly_chart(fig_qq, width="stretch")
-
-    with st.expander("Goodness-of-Fit Tests"):
-        test_df = pd.DataFrame([
-            {
-                "Test": "D'Agostino-Pearson",
-                "Statistic": f"{norm_metrics['dagostino_stat']:.3f}",
-                "p-value": f"{norm_metrics['dagostino_p_value']:.4e}",
-                "Result": "Gaussian" if norm_metrics['dagostino_p_value'] > 0.05 else "Non-Gaussian tail/skew",
-            },
-            {
-                "Test": "Kolmogorov-Smirnov",
-                "Statistic": f"{norm_metrics['ks_stat']:.3f}",
-                "p-value": f"{norm_metrics['ks_p_value']:.4e}",
-                "Result": "Good Fit" if norm_metrics['ks_p_value'] > 0.01 else "Tail deviation",
-            },
-        ])
-        st.dataframe(test_df, width="stretch", hide_index=True)
-
-# ----------------- TAB 3: CAPACITY & SLA RISK -----------------
-with tab_capacity:
-    st.subheader("Capacity Planning & Risk Assessment")
-
-    cap_left, cap_right = st.columns(2)
-
-    with cap_left:
-        target_sla = st.select_slider(
-            "Target Reliability / SLA (%)",
-            options=[95.0, 99.0, 99.9, 99.99],
+    with c1:
+        st.markdown("#### 🎯 Option A: Pick Your Desired Reliability (SLA)")
+        sla_choice = st.select_slider(
+            "How reliable must your service be?",
+            options=[90.0, 95.0, 99.0, 99.9, 99.99],
             value=99.9,
+            format_func=lambda x: f"{x}% uptime (Standard)" if x == 99.9 else f"{x}% uptime",
         )
-        provision_res = analyzer.recommend_provisioning_capacity(target_sla)
+        rec = analyzer.recommend_provisioning_capacity(sla_choice)
 
         st.metric(
-            label="Recommended Capacity",
-            value=f"{provision_res['recommended_capacity_gbps']:.1f} Gbps",
-            delta=f"+{provision_res['safety_buffer_gbps']:.1f} Gbps buffer above mean",
+            label="Recommended Capacity to Provision",
+            value=f"{rec['recommended_capacity_gbps']:.1f} Gbps",
+            delta=f"+{rec['safety_buffer_gbps']:.1f} Gbps safety buffer",
         )
-        st.caption(
-            f"Formula: $C = \\mu + Z \\cdot \\sigma$ &nbsp;|&nbsp; Z = `{provision_res['z_multiplier']:.2f}` &nbsp;|&nbsp; "
-            f"Safety buffer: `{provision_res['safety_buffer_gbps']:.1f} Gbps`"
+        st.write(
+            f"💡 **What this means:** If you buy **{rec['recommended_capacity_gbps']:.1f} Gbps**, "
+            f"your network will successfully handle **{sla_choice}%** of all traffic peaks without dropping a single packet."
         )
 
-    with cap_right:
-        default_cap = float(round(norm_metrics["mean"] + 2.5 * norm_metrics["std"], 1))
-        fixed_cap = st.number_input(
-            "Test Fixed Capacity (Gbps)",
-            min_value=10.0,
-            max_value=250.0,
-            value=default_cap,
-            step=5.0,
+    with c2:
+        st.markdown("#### 🧪 Option B: Test a Fixed Bandwidth Limit")
+        user_test_cap = st.slider(
+            "What if our hardware is capped at:",
+            min_value=float(int(min_load)),
+            max_value=float(int(peak_load + 20)),
+            value=float(int(norm_metrics['mean'] + norm_metrics['std'])),
+            step=2.0,
+            format="%.0f Gbps",
         )
-        sla_eval = analyzer.calculate_sla_violation_probability(fixed_cap)
+        risk = analyzer.calculate_sla_violation_probability(user_test_cap)
+        breach_pct = risk['theoretical_violation_prob'] * 100.0
+
+        if breach_pct < 0.1:
+            risk_status = "🟢 Safe (Less than 0.1% chance of overload)"
+        elif breach_pct < 5.0:
+            risk_status = "🟡 Moderate Risk (Occasional slowdowns)"
+        else:
+            risk_status = "🔴 Dangerous (Frequent overloads and crashes)"
 
         st.metric(
-            label="Breach Probability P(X > C)",
-            value=f"{sla_eval['theoretical_violation_prob']*100:.3f}%",
-            delta=f"Z-Score: {sla_eval['z_score']:.2f}",
+            label="Chance of Network Overload / Crash",
+            value=f"{breach_pct:.2f}%",
+            delta=risk_status,
+            delta_color="off",
         )
-        st.caption(
-            f"Empirical breaches in trace: `{sla_eval['empirical_violation_prob']*100:.2f}%` &nbsp;|&nbsp; "
-            f"Reliability: `{sla_eval['theoretical_sla_reliability_percent']:.2f}%`"
+        st.write(
+            f"💡 **What this means:** At **{user_test_cap:.0f} Gbps**, "
+            f"traffic will exceed capacity about **{breach_pct:.2f}% of the time**."
         )
 
-    # Clean CDF Reliability Curve
-    x_range = np.linspace(
-        max(0, norm_metrics["mean"] - 3 * norm_metrics["std"]),
-        norm_metrics["mean"] + 4 * norm_metrics["std"],
-        200,
+# ----------------- TAB 3: THE BELL CURVE -----------------
+with tab3:
+    st.subheader("Step 3: Why Do We Use the Normal Distribution (Bell Curve)?")
+    st.write(
+        "When millions of independent users click, scroll, and stream, their combined activity naturally clusters around an average. "
+        "This creates a **Bell Curve**."
     )
-    cdf_vals = stats.norm.cdf(x_range, loc=norm_metrics["mean"], scale=norm_metrics["std"]) * 100.0
 
-    fig_cdf = go.Figure()
-    fig_cdf.add_trace(
+    x_min = max(0, df_trace["total_load_gbps"].min() - 5)
+    x_max = df_trace["total_load_gbps"].max() + 5
+    x_vals = np.linspace(x_min, x_max, 150)
+    fitted_pdf = stats.norm.pdf(x_vals, loc=norm_metrics["mean"], scale=norm_metrics["std"])
+
+    fig_bell = go.Figure()
+    fig_bell.add_trace(
+        go.Histogram(
+            x=df_trace["total_load_gbps"],
+            histnorm="probability density",
+            name="Actual Traffic Frequency",
+            opacity=0.6,
+            marker_color="#0284c7",
+            nbinsx=30,
+        )
+    )
+    fig_bell.add_trace(
         go.Scatter(
-            x=x_range,
-            y=cdf_vals,
+            x=x_vals,
+            y=fitted_pdf,
             mode="lines",
-            name="Reliability Curve",
-            line=dict(color="#10b981", width=2),
+            name="Ideal Bell Curve (Normal Distribution)",
+            line=dict(color="#f43f5e", width=2.5),
         )
     )
-    fig_cdf.add_vline(
-        x=provision_res["recommended_capacity_gbps"],
-        line_dash="dot",
-        line_color="#f59e0b",
-        annotation_text=f"{target_sla}%: {provision_res['recommended_capacity_gbps']:.1f} Gbps",
-    )
-    fig_cdf.update_layout(
-        title="Reliability Curve: Provisioned Capacity vs SLA Coverage",
+
+    fig_bell.update_layout(
         template="plotly_dark",
-        xaxis_title="Allocated Capacity (Gbps)",
-        yaxis_title="SLA Coverage (%)",
-        height=320,
-        margin=dict(l=20, r=20, t=40, b=20),
-    )
-    st.plotly_chart(fig_cdf, width="stretch")
-
-# ----------------- TAB 4: LOAD BALANCER -----------------
-with tab_lb:
-    st.subheader("Load Balancer Routing Comparison")
-
-    ctrl1, ctrl2 = st.columns(2)
-    with ctrl1:
-        num_nodes = st.slider("Worker Gateway Nodes", min_value=2, max_value=8, value=4)
-    with ctrl2:
-        node_cap = st.slider("Node Capacity (Gbps)", min_value=10.0, max_value=50.0, value=25.0, step=2.5)
-
-    lb_sim = LoadBalancingSimulator(num_nodes=num_nodes, node_capacity_gbps=node_cap)
-
-    strategies = ["round_robin", "least_loaded", "statistical_aware"]
-    results = {}
-    for strat in strategies:
-        results[strat] = lb_sim.run_simulation(df_trace["total_load_gbps"].values, strategy=strat)
-
-    comparison_data = []
-    for s in strategies:
-        r = results[s]
-        comparison_data.append({
-            "Strategy": s.replace("_", " ").title(),
-            "Served (Gbps)": f"{r['total_served_gbps']:.1f}",
-            "Dropped (Gbps)": f"{r['total_dropped_gbps']:.1f}",
-            "Drop Rate": f"{r['packet_drop_rate_pct']:.2f}%",
-            "Imbalance (σ)": f"{r['load_imbalance_std']:.2f}",
-        })
-    st.dataframe(pd.DataFrame(comparison_data), width="stretch", hide_index=True)
-
-    # Node load comparison chart
-    fig_nodes = go.Figure()
-    for s in strategies:
-        node_metrics = results[s]["node_metrics"]
-        node_names = [n["node_id"] for n in node_metrics]
-        avg_loads = [n["avg_load_gbps"] for n in node_metrics]
-        fig_nodes.add_trace(go.Bar(x=node_names, y=avg_loads, name=s.replace("_", " ").title()))
-
-    fig_nodes.update_layout(
-        barmode="group",
-        title="Average Load Per Node by Strategy",
-        template="plotly_dark",
-        yaxis_title="Average Load (Gbps)",
-        xaxis_title="Worker Node",
-        height=320,
-        margin=dict(l=20, r=20, t=40, b=20),
+        height=340,
+        margin=dict(l=20, r=20, t=30, b=20),
+        xaxis_title="Traffic Load (Gbps)",
+        yaxis_title="How Often This Load Occurs",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
-    st.plotly_chart(fig_nodes, width="stretch")
+    st.plotly_chart(fig_bell, width="stretch")
+
+    st.markdown(
+        """
+        <div class="takeaway-box">
+            <b>Why this helps:</b><br>
+            Because the traffic matches a standard mathematical curve, we don't have to guess the future! 
+            Using simple formulas ($\mu + 3\sigma$), we know that <b>99.7% of all traffic</b> will always fall within 3 standard deviations of the average.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
