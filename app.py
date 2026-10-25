@@ -136,9 +136,9 @@ with st.sidebar:
     if live_streaming_on:
         stream_speed = st.selectbox(
             "Live Refresh Speed:",
-            options=[1, 2, 5],
+            options=[10, 20, 30],
             index=0,
-            format_func=lambda s: f"Every {s} second{'s' if s > 1 else ''} (Live)",
+            format_func=lambda s: f"Every {s} seconds (Live)",
         )
         if st.button("🔄 Reset Live Buffer"):
             st.session_state["live_history_df"] = None
