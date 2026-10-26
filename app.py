@@ -25,7 +25,7 @@ from src.load_balancer import LoadBalancingSimulator
 from src.real_data import RealDataIngestionService
 
 st.set_page_config(
-    page_title="Network Traffic & Capacity Planner",
+    page_title="Network Load Analysis using Normal Distribution",
     page_icon="🌐",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -974,7 +974,7 @@ st.markdown(
                 <span class="brand-badge">📈 Gaussian Distribution</span>
                 <span class="brand-badge">🛡️ Live 3-Sigma Engine</span>
             </div>
-            <h1 class="brand-title">Network Traffic & Capacity Planner</h1>
+            <h1 class="brand-title">Network Load Analysis using Normal Distribution</h1>
             <p class="brand-tagline">Probabilistic Cloud Workload Modeling • Stochastic Jitter Simulation • SLA Breach Prevention</p>
         </div>
     </div>
