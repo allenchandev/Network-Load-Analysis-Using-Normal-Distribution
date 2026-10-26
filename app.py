@@ -971,7 +971,7 @@ st.markdown(
         <div class="brand-text-wrapper">
             <div class="brand-badge-row">
                 <span class="brand-badge">⚡ Enterprise Network Analytics</span>
-                <span class="brand-badge">📈 Gaussian Distribution $\\mathcal{N}(\\mu, \\sigma^2)$</span>
+                <span class="brand-badge">📈 Gaussian Distribution</span>
                 <span class="brand-badge">🛡️ Live 3-Sigma Engine</span>
             </div>
             <h1 class="brand-title">Network Traffic & Capacity Planner</h1>
