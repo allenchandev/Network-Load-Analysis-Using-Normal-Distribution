@@ -1000,22 +1000,44 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+@st.cache_data(show_spinner=False)
+def get_cached_trace(duration_hours: int, base_load: float, diurnal_amp: float, noise_std: float, burst_prob: float, burst_mag: float) -> pd.DataFrame:
+    cfg = TrafficSimulationConfig(
+        duration_hours=duration_hours,
+        sampling_rate_minutes=2,
+        base_load_gbps=base_load,
+        diurnal_amplitude_gbps=diurnal_amp,
+        random_noise_std_gbps=noise_std,
+        burst_probability=burst_prob,
+        burst_magnitude_gbps=burst_mag,
+        random_seed=42,
+    )
+    sim = NetworkLoadSimulator(cfg)
+    return sim.generate_trace()
+
+
+@st.cache_data(show_spinner=False)
+def run_cached_lb_simulation(traffic_tuple: tuple, num_nodes: int, node_cap: float, strategy: str):
+    sim = LoadBalancingSimulator(num_nodes=num_nodes, node_capacity_gbps=node_cap)
+    return sim.run_simulation(np.array(traffic_tuple), strategy=strategy)
+
+
 # Sidebar: Simulator Mode & Settings
 with st.sidebar:
     st.markdown("### 🎛️ Real-Time Simulator")
     
     live_streaming_on = st.toggle(
         "⚡ Live Real-Time Stream",
-        value=True,
-        help="When enabled, the simulator streams live traffic second-by-second using the actual clock time.",
+        value=False,
+        help="Toggle on for continuous second-by-second live streaming. Keep off for instant, zero-lag exploration.",
     )
 
     if live_streaming_on:
         stream_speed = st.selectbox(
             "Live Refresh Speed:",
-            options=[1, 2, 5],
+            options=[2, 3, 5],
             index=0,
-            format_func=lambda s: f"Every {s} second{'s' if s > 1 else ''} (Live)",
+            format_func=lambda s: f"Every {s} seconds",
         )
         if st.button("🔄 Reset Live Buffer"):
             st.session_state["live_history_df"] = None
@@ -1083,7 +1105,15 @@ if live_streaming_on:
     df_trace = updated_df.copy()
     data_origin_label = f"🟢 LIVE STREAMING ({now_ts.strftime('%H:%M:%S')})"
 else:
-    df_trace = simulator.generate_trace()
+    raw_cached = get_cached_trace(
+        duration_hours=duration_hours,
+        base_load=base_load,
+        diurnal_amp=diurnal_amp,
+        noise_std=noise_std,
+        burst_prob=burst_prob,
+        burst_mag=burst_magnitude,
+    )
+    df_trace = raw_cached.copy()
     # Align timestamps to current date
     df_trace["timestamp"] = pd.date_range(end=now_ts, periods=len(df_trace), freq="2min")
     data_origin_label = "Real-Time Clock Aligned Simulation"
@@ -1655,13 +1685,15 @@ with tab5:
         )
 
     with lb_col_result:
-        lb_sim = LoadBalancingSimulator(num_nodes=lb_nodes, node_capacity_gbps=lb_capacity)
         traffic_stream = df_trace["total_load_gbps"].values
+        # Sample or limit to 200 points for ultra-fast, smooth calculation
+        stream_sample = traffic_stream[:200] if len(traffic_stream) > 200 else traffic_stream
+        traffic_tuple = tuple(np.round(stream_sample, 2))
 
         # Comparative line chart: utilisation over time per strategy
         st.markdown("**📈 Per-Node Load History (Gaussian-Aware Strategy)**")
         fig_lb = go.Figure()
-        lb_result_detail = lb_sim.run_simulation(traffic_stream, strategy="statistical_aware")
+        lb_result_detail = run_cached_lb_simulation(traffic_tuple, lb_nodes, lb_capacity, "statistical_aware")
         for ni, hist in enumerate(lb_result_detail.get('node_histories', [])):
             if hist:
                 fig_lb.add_trace(go.Scatter(
