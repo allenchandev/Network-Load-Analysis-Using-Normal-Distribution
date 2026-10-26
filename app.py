@@ -1028,19 +1028,20 @@ with st.sidebar:
     
     live_streaming_on = st.toggle(
         "⚡ Live Real-Time Stream",
-        value=False,
-        help="Toggle on for continuous second-by-second live streaming. Keep off for instant, zero-lag exploration.",
+        value=True,
+        help="Streams live network traffic second-by-second using wall-clock time.",
     )
 
     if live_streaming_on:
         stream_speed = st.selectbox(
             "Live Refresh Speed:",
-            options=[2, 3, 5],
+            options=[1, 2, 5],
             index=0,
-            format_func=lambda s: f"Every {s} seconds",
+            format_func=lambda s: f"Every {s} second{'s' if s > 1 else ''} (Real-time)",
         )
-        if st.button("🔄 Reset Live Buffer"):
+        if st.button("🔄 Reset Live Buffer & Time"):
             st.session_state["live_history_df"] = None
+            st.rerun()
     
     st.markdown("---")
     st.markdown("#### ⚙️ Traffic Parameters")
@@ -1283,12 +1284,13 @@ with tab1:
         annotation_font_color="#000000",
     )
 
+    ui_rev_val = f"live_{now_ts.strftime('%H%M%S')}" if live_streaming_on else "constant"
     fig_trace.update_layout(
         template="plotly_white",
         plot_bgcolor="#ffffff",
         paper_bgcolor="#ffffff",
         font=dict(color="#000000"),
-        uirevision="constant",
+        uirevision=ui_rev_val,
         height=380,
         margin=dict(l=20, r=20, t=20, b=20),
         xaxis=dict(
