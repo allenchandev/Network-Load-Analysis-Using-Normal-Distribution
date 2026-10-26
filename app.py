@@ -1658,56 +1658,6 @@ with tab5:
         lb_sim = LoadBalancingSimulator(num_nodes=lb_nodes, node_capacity_gbps=lb_capacity)
         traffic_stream = df_trace["total_load_gbps"].values
 
-        strategies = [
-            ("round_robin",        "🔄 Round-Robin",        "#0284c7"),
-            ("least_loaded",       "⚡ Least-Loaded",       "#6366f1"),
-            ("statistical_aware",  "🧠 Gaussian-Aware",     "#10b981"),
-        ]
-
-        results_list = []
-        for strat_key, strat_label, strat_color in strategies:
-            r = lb_sim.run_simulation(traffic_stream, strategy=strat_key)
-            r['label'] = strat_label
-            r['color'] = strat_color
-            r['key']   = strat_key
-            results_list.append(r)
-
-        best_drop = min(r['drop_rate_pct'] for r in results_list)
-
-        # Animated cards
-        lb_cols = st.columns(len(strategies))
-        for i, (res, col) in enumerate(zip(results_list, lb_cols)):
-            is_winner = abs(res['drop_rate_pct'] - best_drop) < 0.001
-            winner_html = '<span class="lb-winner-badge">🏆 WINNER</span>' if is_winner else ''
-            util_pct = min(100, res['avg_utilisation_pct'])
-
-            with col:
-                st.markdown(
-                    f"""
-                    <div class="lb-card" style="--lb-accent:{res['color']};animation-delay:{i*0.12}s;">
-                        <div class="lb-strategy-name">{res['label']}</div>
-                        <div class="risk-bar-container" style="margin:10px 0 6px 0;">
-                            <div class="risk-bar-label">
-                                <span>Avg Utilisation</span><span>{util_pct:.1f}%</span>
-                            </div>
-                            <div class="risk-bar-track">
-                                <div class="risk-bar-fill" style="--bar-width:{util_pct:.1f}%;width:{util_pct:.1f}%;background:{res['color']};"></div>
-                            </div>
-                        </div>
-                        <div class="lb-stat-row">
-                            <span>Drop Rate</span>
-                            <span style="color:{'#dc2626' if res['drop_rate_pct']>0.5 else '#10b981'};">{res['drop_rate_pct']:.3f}%</span>
-                        </div>
-                        <div class="lb-stat-row">
-                            <span>Load Fairness σ</span>
-                            <span>{res['load_variance']:.3f}</span>
-                        </div>
-                        {winner_html}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
         # Comparative line chart: utilisation over time per strategy
         st.markdown("**📈 Per-Node Load History (Gaussian-Aware Strategy)**")
         fig_lb = go.Figure()
